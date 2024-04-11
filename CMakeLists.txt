@@ -29,6 +29,6 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Объявляем тесты
-add_executable(Hash_table_tests "tests/Hash_table_tests.cc" "include/Hash_table/Hash_table.h" )
+add_executable(Hash_table_tests "tests/Hash_table_tests.cc" "include/Hash_table/Hash_table.h")
 target_link_libraries(Hash_table_tests Hash_table GTest::gtest_main)
 

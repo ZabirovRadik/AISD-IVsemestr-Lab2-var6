@@ -1,11 +1,11 @@
 #pragma once
 #include <iostream>
-#include <vector>
+#include <deque>
 #include <random>
 #include <string>
-#define LEN_WORD (sizeof(size_t) * 8)
+#define LEN_WORD sizeof(size_t) * 8
 #define L 11
-#define A 0.5
+#define A 33333
 
 
 template<typename Key, typename Value>
@@ -13,14 +13,14 @@ class HashTable {
 	struct Pair {
 		Key key;
 		Value value;
-		friend bool operator==(Pair& first, Pair& second) {
-			return true;// first.key == second.key && first.value == second.value;
+		friend bool operator==(const Pair& first, const Pair& second) {
+			return first.key == second.key && first.value == second.value;
 		}
 	};
 
-	size_t hash(size_t key) const{
+	size_t hash(size_t key) const {
 		size_t tmp = key * A;
-		return	((tmp >> L) | (tmp << (sizeof(size_t) - L)));
+		return ((tmp >> L) | (tmp << LEN_WORD - L));
 	}
 
 	std::vector<std::vector<Pair>> _data;
@@ -129,8 +129,19 @@ public:
 		return ans;
 	}
 
+	void resize(size_t size) {
+		std::vector<std::vector<Pair>> history_data = _data;
+		_data.clear();
+		_data.resize(size);
+		for (auto& v : history_data) {
+			for (auto p : v) {
+				size_t ind = hash(p.key) % _data.size();
+				_data[ind].push_back(p);
+			}
+		}
+	}
+
 	friend bool operator==(const HashTable& first, const HashTable& second){
-		bool ans = true;
 		size_t v_index = 0;
 		if (first._data.size() != second._data.size())
 			return false;
@@ -139,7 +150,7 @@ public:
 				return false;
 			size_t p_ind = 0;
 			for (Pair p : v) {
-				if (p.key != second._data[v_index][p_ind].key || p.value != second._data[v_index][p_ind].value) {
+				if (not( p == second._data[v_index][p_ind])) {
 					return false;
 				}
 				++p_ind;
@@ -161,13 +172,13 @@ public:
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const HashTable& table) {
-		os << "Hash Table:" << std::endl;
+		os << "Hash Table(size= " << table._data.size() << "):" << std::endl;
 		for (std::vector<Pair> v : table._data) {
 			size_t k = 1;
 			for (Pair p : v) {
 				for (int i = 0; i < k; ++i)
 					os << "\t";
-				os << "key= " << p.key << ", value= " << p.value << std::endl;
+				os << "key= " << p.key << ", value= " << p.value << " hash= " << table.hash(p.key) << std::endl;
 				k += 1;
 			}
 		}
@@ -175,3 +186,35 @@ public:
 	}
 };
 
+
+size_t hash(const char& c) {
+	switch (c) {
+	case 'I': return 1;
+	case 'V': return 5;
+	case 'X': return 10;
+	case 'L': return 50;
+	case 'C': return 100;
+	case 'D': return 500;
+	case 'M': return 1000;
+	default:
+		throw std::invalid_argument("Ñan't convert your number from Roman to Arabic");
+	}
+}
+
+
+size_t Roman_to_arabish(const std::string& key) {
+	std::deque<size_t> values;
+	for (char c : key) {
+		values.push_front(hash(c));
+	}
+	size_t answer = 0;
+	size_t previous = 0;
+	for (size_t num : values) {
+		if (num >= previous)
+			answer += num;
+		else
+			answer -= num;
+		previous = num;
+	}
+	return answer;
+}
