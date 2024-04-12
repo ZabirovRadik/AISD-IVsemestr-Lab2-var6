@@ -88,34 +88,28 @@ public:
 	}
 
 	bool erase(const Key& key) {
-		size_t v_index = 0;
-		for (std::vector<Pair> v : _data) {
-			size_t p_ind = 0;
-			for (Pair p : v) {
-				if (p.key == key) {
-					_data[v_index].erase(_data[v_index].begin() + p_ind);
-					return true;
-				}
-				++p_ind;
+		size_t v_index = hash(key) % _data.size();
+		size_t p_ind = 0;
+		for (Pair p : _data[v_index]) {
+			if (p.key == key) {
+				_data[v_index].erase(_data[v_index].begin() + p_ind);
+				return true;
 			}
-			++v_index;
+			++p_ind;
 		}
 		return false;
 	}
 
 	bool erase_all_occurences(const Key& key) {
-		size_t v_index = 0;
 		bool answer = false;
-		for (std::vector<Pair> v : _data) {
-			size_t p_ind = 0;
-			for (Pair p : v) {
+		size_t v_index = hash(key) % _data.size();
+		size_t p_ind = 0;
+		for (Pair p : _data[v_index]) {
 				if (p.key == key) {
 					_data[v_index].erase(_data[v_index].begin() + p_ind);
 					answer = true;
 				}
 				++p_ind;
-			}
-			++v_index;
 		}
 		return answer;
 	}
