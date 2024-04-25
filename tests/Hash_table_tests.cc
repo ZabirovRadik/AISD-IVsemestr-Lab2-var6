@@ -18,7 +18,7 @@ TEST(HashTableTests, CopyTest) {
 
 
 TEST(HashTableTestsr, EraseTest) {
-	HashTable<size_t, size_t> h_table(10, 1);
+	HashTable<size_t, size_t, std::list> h_table(10, 1);
 	h_table.insert(3794, 2765);
 	std::cout << h_table;
 	h_table.erase(3794);
@@ -28,10 +28,10 @@ TEST(HashTableTestsr, EraseTest) {
 }
 
 TEST(TaskTest, TaskTest) {
-	EXPECT_EQ(Roman_to_arabish("MMMDCCLXXII"), 3772);
-	EXPECT_EQ(Roman_to_arabish("MCCCLXXV"), 1375);
-	EXPECT_EQ(Roman_to_arabish("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMCMXCIX"), 99999);
-	EXPECT_EQ(Roman_to_arabish("MMMMMDCCXLIII"), 5743);
-	EXPECT_EQ(Roman_to_arabish(""), 0);
-	EXPECT_EQ(Roman_to_arabish("CCV"), 205);
+	EXPECT_EQ(roman_to_arabish("MMMDCCLXXII"), 3772);
+	EXPECT_EQ(roman_to_arabish("MCCCLXXV"), 1375);
+	EXPECT_EQ(roman_to_arabish("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMCMXCIX"), 99999);
+	EXPECT_EQ(roman_to_arabish("MMMMMDCCXLIII"), 5743);
+	EXPECT_ANY_THROW(roman_to_arabish(""), 0);
+	EXPECT_EQ(roman_to_arabish("CCV"), 205);
 }

@@ -3,12 +3,13 @@
 #include <deque>
 #include <random>
 #include <string>
+#include <list>
 #define LEN_WORD sizeof(size_t) * 8
 #define L 11
 #define A 33333
 
 
-template<typename Key, typename Value>
+template<typename Key, typename Value, template<typename...> class Container = std::vector>
 class HashTable {
 	struct Pair {
 		Key key;
@@ -23,7 +24,16 @@ class HashTable {
 		return ((tmp >> L) | (tmp << LEN_WORD - L));
 	}
 
-	std::vector<std::vector<Pair>> _data;
+	std::vector<Container<Pair>> _data;
+
+	Pair* get_pair(const Key& key){
+		size_t ind = hash(key) % _data.size();
+		for (Pair& p : _data[ind]) {
+			if (p.key == key)
+				return &p;
+		}
+		return nullptr;
+	}
 public:
 	HashTable(size_t size) {
 		if (size == 0)
@@ -48,9 +58,9 @@ public:
 		_data = second._data;
 	}
 
-	Pair* find(const Key& key) const{
+	const Pair* find(const Key& key) const{
 		size_t ind = hash(key) % _data.size();
-		for (Pair p : _data[ind]) {
+		for (const Pair& p : _data[ind]) {
 			if (p.key == key)
 				return &p;
 		}
@@ -66,21 +76,19 @@ public:
 	}
 
 	void insert_or_assigned(const Key& key, const Value& value) {
-		Pair* tmp = find(key);
+		Pair* tmp = get_pair(key);
 		if (tmp)
 			tmp->value = value;
 		else {
 			size_t ind = hash(key) % _data.size();
-			Pair new_pair;
-			new_pair.key = key;
-			new_pair.value = value;
+			Pair new_pair{ key, value };
 			_data[ind].push_back(new_pair);
 		}
 	}
 
 	bool contains(const Value& value) const{
 		for (std::vector<Pair> v : _data) {
-			for (Pair p : v)
+			for (Pair& p : v)
 				if (p.value == value)
 					return true;
 		}
@@ -89,13 +97,11 @@ public:
 
 	bool erase(const Key& key) {
 		size_t v_index = hash(key) % _data.size();
-		size_t p_ind = 0;
-		for (Pair p : _data[v_index]) {
-			if (p.key == key) {
-				_data[v_index].erase(_data[v_index].begin() + p_ind);
+		for (auto iter = _data[v_index].begin(); iter != _data[v_index].end(); ++iter) {
+			if (iter->key == key) {
+				_data[v_index].erase(iter);
 				return true;
 			}
-			++p_ind;
 		}
 		return false;
 	}
@@ -103,13 +109,11 @@ public:
 	bool erase_all_occurences(const Key& key) {
 		bool answer = false;
 		size_t v_index = hash(key) % _data.size();
-		size_t p_ind = 0;
-		for (Pair p : _data[v_index]) {
-				if (p.key == key) {
-					_data[v_index].erase(_data[v_index].begin() + p_ind);
+		for (auto iter = _data[v_index].begin(); iter != _data[v_index].end(); ++iter) {
+				if (iter->key == key) {
+					_data[v_index].erase(iter);
 					answer = true;
 				}
-				++p_ind;
 		}
 		return answer;
 	}
@@ -117,18 +121,22 @@ public:
 	size_t count(const Key& key) const{
 		size_t ans = 0;
 		for (std::vector<Pair> v : _data)
-			for (Pair p : v)
+			for (const Pair& p : v)
 				if (p.key == key)
 					++ans;
 		return ans;
 	}
 
 	void resize(size_t size) {
-		std::vector<std::vector<Pair>> history_data = _data;
+		if (size == 0) {
+			_data.clear();
+			return;
+		}
+		std::vector<Container<Pair>> history_data = _data;
 		_data.clear();
 		_data.resize(size);
 		for (auto& v : history_data) {
-			for (auto p : v) {
+			for (auto& p : v) {
 				size_t ind = hash(p.key) % _data.size();
 				_data[ind].push_back(p);
 			}
@@ -139,14 +147,15 @@ public:
 		size_t v_index = 0;
 		if (first._data.size() != second._data.size())
 			return false;
-		for (std::vector<Pair> v : first._data) {
+		for (Container<Pair> v : first._data) {
 			if (v.size() != second._data[v_index].size())
 				return false;
 			size_t p_ind = 0;
-			for (Pair p : v) {
-				if (not( p == second._data[v_index][p_ind])) {
+			for (const Pair& p : v) {
+				auto appropriate = second._data[v_index].begin();
+				std::advance(appropriate, p_ind);
+				if ( p != *appropriate)
 					return false;
-				}
 				++p_ind;
 			}
 			++v_index;
@@ -167,9 +176,9 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const HashTable& table) {
 		os << "Hash Table(size= " << table._data.size() << "):" << std::endl;
-		for (std::vector<Pair> v : table._data) {
+		for (Container<Pair> v : table._data) {
 			size_t k = 1;
-			for (Pair p : v) {
+			for (const Pair& p : v) {
 				for (int i = 0; i < k; ++i)
 					os << "\t";
 				os << "key= " << p.key << ", value= " << p.value << " hash= " << table.hash(p.key) << std::endl;
@@ -181,7 +190,7 @@ public:
 };
 
 
-size_t hash(const char& c) {
+size_t hash_roman_to_arabish(const char& c) {
 	switch (c) {
 	case 'I': return 1;
 	case 'V': return 5;
@@ -196,19 +205,20 @@ size_t hash(const char& c) {
 }
 
 
-size_t Roman_to_arabish(const std::string& key) {
-	std::deque<size_t> values;
+size_t roman_to_arabish(const std::string& key) {
+	HashTable<char, size_t, std::deque> values(key.size());
 	for (char c : key) {
-		values.push_front(hash(c));
+		values.insert(c, hash_roman_to_arabish(c));
 	}
 	size_t answer = 0;
 	size_t previous = 0;
-	for (size_t num : values) {
-		if (num >= previous)
-			answer += num;
+	for (size_t i = key.size(); i > 0; --i) {
+		size_t in_arabish = values.find(key[i - 1])->value;
+		if (in_arabish >= previous)
+			answer += in_arabish;
 		else
-			answer -= num;
-		previous = num;
+			answer -= in_arabish;
+		previous = in_arabish;
 	}
 	return answer;
 }
